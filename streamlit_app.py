@@ -40,6 +40,6 @@ if ingredients_list:
         st.success('Your Smoothie is Ordered!', icon ="✅")
 import requests
 smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-st.text(smoothiefroot)
+st.text(smoothiefroot_response)
 #submitted = st.button('Submit')
 #st.success('Someone clicked the button', icon = '👍')
