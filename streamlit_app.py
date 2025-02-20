@@ -1,39 +1,46 @@
-# Import python packages
 import streamlit as st
 from snowflake.snowpark.functions import col
+import time
 
-# Write directly to the app
+# Title for the app
 st.title("Smoothie Maker 1000 :cup_with_straw:")
-st.write()
+st.write("Place your order below!")
 
-#title = st.text_input('Movie title', 'Life of Brian')
-#st.write('The current movie title is', title)
+# Connect to Snowflake using your Streamlit connection
 cnx = st.connection("snowflake")
-
 session = cnx.session()
-my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
-editable_df = st.data_editor(my_dataframe)
-#st.dataframe(data=my_dataframe, use_container_width=True)
 
-ingredients_list = st.multiselect('Choose up to five ingredients:', my_dataframe)
+# Retrieve fruit options from the fruit_options table
+fruit_df = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
+# Convert the Snowpark DataFrame into a list of fruit names
+fruit_options = [row["FRUIT_NAME"] for row in fruit_df.collect()]
 
-if ingredients_list:
+# Display fruit options for the user to choose from (multiselect)
+ingredients_list = st.multiselect("Choose up to five ingredients:", fruit_options)
 
-    ingredients_string = ''
+# Text input for the customer's name (name_on_order)
+name_on_order = st.text_input("Enter your name for the order:")
 
-    for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen + ' '
-    st.write(ingredients_string)
-    my_insert_stmt = """ insert into smoothies.public.orders(ingredients)
-            values ('""" + ingredients_string + """','""" + name_on_order + """')"""
-    st.write(my_insert_stmt)
-    st.stop()
-    time_to_insert = st.button('Submit Order')
-    if time_to_insert:
+# Button to submit the order
+if st.button("Submit Order"):
+    # Validate that at least one ingredient and a name were provided
+    if not ingredients_list:
+        st.error("Please select at least one ingredient!")
+    elif not name_on_order:
+        st.error("Please enter your name!")
+    else:
+        # Create a single string from the list of ingredients (space-separated)
+        ingredients_string = " ".join(ingredients_list)
+        
+        # Build the INSERT statement (using f-string for clarity)
+        # This assumes your orders table has columns INGREDIENTS and NAME_ON_ORDER
+        my_insert_stmt = f"""
+        INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER)
+        VALUES ('{ingredients_string}', '{name_on_order}')
+        """
+        st.write("Executing query:")
+        st.code(my_insert_stmt)
+        
+        # Execute the query
         session.sql(my_insert_stmt).collect()
-        st.success('Your Smoothie is Ordered!', icon ="✅")
-import requests
-smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-sf_df = sf.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
-#submitted = st.button('Submit')
-#st.success('Someone clicked the button', icon = '👍')
+        st.success("Your Smoothie is Ordered!", icon="✅")
