@@ -10,8 +10,7 @@ st.write("Place your order below!")
 # Connect to Snowflake using your Streamlit connection
 cnx = st.connection("snowflake")
 session = cnx.session()
-session.sql("USE DATABASE SMOOTHIES").collect()
-session.sql("USE SCHEMA PUBLIC").collect()
+
 # Retrieve fruit options from the fruit_options table
 fruit_df = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
 # Convert the Snowpark DataFrame into a list of fruit names
@@ -36,6 +35,8 @@ if st.button("Submit Order"):
         
         # Build the INSERT statement (using f-string for clarity)
         # This assumes your orders table has columns INGREDIENTS and NAME_ON_ORDER
+        user_info = session.sql("SELECT CURRENT_USER() AS user, CURRENT_ROLE() AS role").collect()
+st.write("Logged in as:", user_info)
         my_insert_stmt = f"""
         INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER)
         VALUES ('{ingredients_string}', '{name_on_order}')
