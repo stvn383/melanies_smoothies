@@ -1,49 +1,61 @@
 import streamlit as st
+from snowflake.snowpark.session import Session
 from snowflake.snowpark.functions import col
 import time
 
-
-# Title for the app
+# Set up the title and description
 st.title("Smoothie Maker 1000 :cup_with_straw:")
 st.write("Place your order below!")
 
-# Connect to Snowflake using your Streamlit connection
+# Connect to Snowflake using the Streamlit connection
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Retrieve fruit options from the fruit_options table
-fruit_df = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
-# Convert the Snowpark DataFrame into a list of fruit names
-fruit_options = [row["FRUIT_NAME"] for row in fruit_df.collect()]
+# Function to load orders from the table
+def load_orders():
+    return session.table("smoothies.public.orders")\
+                  .select(col("INGREDIENTS"), col("NAME_ON_ORDER"), col("ORDER_FILLED"), col("ORDER_TS"))\
+                  .collect()
 
-# Display fruit options for the user to choose from (multiselect)
-ingredients_list = st.multiselect("Choose up to five ingredients:", fruit_options)
+# Display current orders in the table
+st.subheader("Current Orders")
+try:
+    orders = load_orders()
+    st.dataframe(orders)
+except Exception as e:
+    st.error(f"Error loading orders: {e}")
 
-# Text input for the customer's name (name_on_order)
-name_on_order = st.text_input("Enter your name for the order:")
+# Inputs for new order
+st.subheader("Create a New Order")
+ingredients_input = st.text_input("Enter ingredients (separate with spaces):")
+name_on_order = st.text_input("Enter your name:")
+
+# Checkbox for order status
+order_filled = st.checkbox("Mark order as filled")
 
 # Button to submit the order
 if st.button("Submit Order"):
-    # Validate that at least one ingredient and a name were provided
-    if not ingredients_list:
-        st.error("Please select at least one ingredient!")
-    elif not name_on_order:
-        st.error("Please enter your name!")
+    if not ingredients_input or not name_on_order:
+        st.error("Please provide both ingredients and your name.")
     else:
-        # Create a single string from the list of ingredients (space-separated)
-        ingredients_string = " ".join(ingredients_list)
-        
-        # Build the INSERT statement (using f-string for clarity)
-        # This assumes your orders table has columns INGREDIENTS and NAME_ON_ORDER
-        user_info = session.sql("SELECT CURRENT_USER() AS user, CURRENT_ROLE() AS role").collect()
-        st.write("Logged in as:", user_info)
-        my_insert_stmt = f"""
-        INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER)
-        VALUES ('{ingredients_string}', '{name_on_order}')
+        # Build the INSERT statement
+        # Note: For production, parameterized queries should be used to prevent SQL injection.
+        insert_stmt = f"""
+            INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
+            VALUES ('{ingredients_input}', '{name_on_order}', {str(order_filled).upper()})
         """
-        st.write("Executing query:")
-        st.code(my_insert_stmt)
-        
-        # Execute the query
-        session.sql(my_insert_stmt).collect()
-        st.success("Your Smoothie is Ordered!", icon="✅")
+        try:
+            st.write("Executing query:")
+            st.code(insert_stmt)
+            session.sql(insert_stmt).collect()
+            st.success("Your order has been submitted!")
+        except Exception as e:
+            st.error(f"Error inserting order: {e}")
+
+# Button to refresh the orders display
+if st.button("Refresh Orders"):
+    try:
+        orders = load_orders()
+        st.dataframe(orders)
+    except Exception as e:
+        st.error(f"Error refreshing orders: {e}")
