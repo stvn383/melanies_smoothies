@@ -1,9 +1,8 @@
 import streamlit as st
 from snowflake.snowpark.functions import col
 import time
-USE ROLE ACCOUNTADMIN;
-USE DATABASE SMOOTHIES;
-USE SCHEMA PUBLIC;
+
+
 # Title for the app
 st.title("Smoothie Maker 1000 :cup_with_straw:")
 st.write("Place your order below!")
