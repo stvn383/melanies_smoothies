@@ -36,7 +36,7 @@ if st.button("Submit Order"):
         # Build the INSERT statement (using f-string for clarity)
         # This assumes your orders table has columns INGREDIENTS and NAME_ON_ORDER
         user_info = session.sql("SELECT CURRENT_USER() AS user, CURRENT_ROLE() AS role").collect()
-st.write("Logged in as:", user_info)
+        st.write("Logged in as:", user_info)
         my_insert_stmt = f"""
         INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER)
         VALUES ('{ingredients_string}', '{name_on_order}')
