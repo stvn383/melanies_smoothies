@@ -10,7 +10,8 @@ st.write("Place your order below!")
 # Connect to Snowflake using your Streamlit connection
 cnx = st.connection("snowflake")
 session = cnx.session()
-
+session.sql("USE DATABASE SMOOTHIES").collect()
+session.sql("USE SCHEMA PUBLIC").collect()
 # Retrieve fruit options from the fruit_options table
 fruit_df = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
 # Convert the Snowpark DataFrame into a list of fruit names
