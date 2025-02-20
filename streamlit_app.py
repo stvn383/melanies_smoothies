@@ -40,10 +40,10 @@ if st.button("Submit Order"):
     else:
         # Build the INSERT statement
         # Note: For production, parameterized queries should be used to prevent SQL injection.
-        insert_stmt = f"""
-            INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER, ORDER_FILLED)
-            VALUES ('{ingredients_input}', '{name_on_order}', {str(order_filled).upper()})
-        """
+        insert_stmt = """ insert into smoothies.public.orders(ingredients)
+            values ('""" + ingredients_input + """','"""+name_on_order+ """')""" 
+        st.write(my_insert_stmt)
+        st.stop
         try:
             st.write("Executing query:")
             st.code(insert_stmt)
