@@ -38,6 +38,8 @@ if ingredients_list:
     if time_to_insert:
         session.sql(my_insert_stmt).collect()
         st.success('Your Smoothie is Ordered!', icon ="✅")
-
+import requests
+smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
+st.text(smoothiefroot)
 #submitted = st.button('Submit')
 #st.success('Someone clicked the button', icon = '👍')
